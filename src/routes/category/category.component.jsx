@@ -1,5 +1,6 @@
-import { useContext, useState, useEffect, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useParams } from "react-router-dom";
+import { gql, useQuery } from "@apollo/client";
 
 import ProductCard from "../../components/product-card/product-card.component";
 
@@ -9,14 +10,45 @@ import { CategoriesContext } from "../../contexts/categories.context";
 
 import { CategoryContainer, Title } from "./category.styles";
 
+const GET_CATEGORY = gql`
+  query ($title: String!) {
+    getCollectionsByTitle(title: $title) {
+      id
+      title
+      items {
+        name
+        id
+        price
+        imageUrl
+      }
+    }
+  }
+`;
+
 const Category = () => {
   const { category } = useParams();
-  const { categoriesMap, loading } = useContext(CategoriesContext);
-  const [products, setProducts] = useState(categoriesMap[category]);
 
+  const { loading, error, data } = useQuery(GET_CATEGORY, {
+    variables: {
+      title: category,
+    },
+  });
+
+  console.log(data);
+
+  // run this use effect everytime category changes and everytime data changes
   useEffect(() => {
-    setProducts(categoriesMap[category]);
-  }, [category, categoriesMap]);
+    if (data) {
+      // nested destructure
+      const {
+        getCollectionsByTitle: { items },
+      } = data;
+
+      setProducts(items);
+    }
+  }, [category, data]);
+
+  const [products, setProducts] = useState([]);
 
   return (
     <Fragment>
